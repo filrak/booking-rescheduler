@@ -1,5 +1,5 @@
-const mockCalendar = {
-  today: {
+export const mockCalendar = {
+  "12.10.2024": {
     "8:00": { available: true },
     "9:00": { 
       available: false,
@@ -20,7 +20,7 @@ const mockCalendar = {
     },
     "12:00": { available: true }
   },
-  tomorrow: {
+  "13.10.2024": {
     "8:00": { available: true },
     "9:00": { available: true },
     "10:00": { 
@@ -43,7 +43,7 @@ const mockCalendar = {
   }
 }
 
-const mockBarbers = {
+export const mockBarbers = {
   "Mike": {
     email: "mike@barbershop.com",
     specialties: ["Haircut", "Beard Trim"],
