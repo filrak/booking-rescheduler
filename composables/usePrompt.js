@@ -8,7 +8,8 @@ export const usePrompt = async (prompt, context = [{
   const config = useRuntimeConfig();
 
   const openai = new OpenAI({
-    apiKey: config.openaiApiKey
+    apiKey: config.public.openaiApiKey,
+    dangerouslyAllowBrowser: true
   });
   
   const completion = await openai.chat.completions.create({
