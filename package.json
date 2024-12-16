@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "lowdb": "^7.0.1",
     "nuxt": "^3.14.1592",
     "openai": "^4.76.1",
     "vue": "latest",

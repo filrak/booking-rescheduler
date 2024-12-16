@@ -8,6 +8,7 @@
 <script>
 import ChatInterface from '~/components/ChatInterface.vue'
 import {mockCalendar} from '~/calendar_mock'
+
 export default {
   name: 'ChatPage',
   components: {
