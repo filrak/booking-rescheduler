@@ -46,6 +46,7 @@
 <script>
 import { ref, watch } from 'vue'
 import { usePrompt } from '~/composables/usePrompt'
+import { useCalendar } from '~/composables/useCalendar'
 
 export default {
   name: 'ChatInterface',
@@ -62,11 +63,83 @@ export default {
     const isLoading = ref(false)
     const error = ref(null)
     const messagesContainer = ref(null)
+    const calendar = useCalendar()
     
-    // Keep track of conversation context
-    const conversationContext = ref([
-      { role: 'system', content: props.initialPrompt }
-    ])
+    // Define available functions for the AI
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "getAppointment",
+          description: "Get appointment details for a specific date, optionally for a specific time.",
+          parameters: {
+            type: "object",
+            properties: {
+              date: {
+                type: "string",
+                description: "Date in YYYY-MM-DD format"
+              },
+              time: {
+                type: "string",
+                description: "Optional. Time in HH:MM format."
+              }
+            },
+            required: ["date"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "addAppointment",
+          description: "Add a new appointment",
+          parameters: {
+            type: "object",
+            properties: {
+              date: {
+                type: "string",
+                description: "Date in YYYY-MM-DD format"
+              },
+              time: {
+                type: "string",
+                description: "Time in HH:MM format"
+              },
+              appointmentData: {
+                type: "object",
+                properties: {
+                  name: { 
+                    type: "string",
+                    description: "Name of the person"
+                  },
+                  reason: { 
+                    type: "string",
+                    description: "Reason for the appointment"
+                  }
+                },
+                required: ["name", "reason"]
+              }
+            },
+            required: ["date", "time", "appointmentData"]
+          }
+        }
+      }
+    ];
+
+    // Function to execute calendar operations
+    const executeFunction = async (functionName, args) => {
+      switch (functionName) {
+        case 'getAppointment':
+          return await calendar.getAppointment(args.date, args.time || null)
+        case 'addAppointment':
+          return await calendar.addAppointment(
+            args.date,
+            args.time,
+            args.appointmentData
+          )
+        default:
+          throw new Error(`Unknown function: ${functionName}`)
+      }
+    }
 
     const handleSend = async () => {
       if (!inputMessage.value.trim() || isLoading.value) return
@@ -77,34 +150,54 @@ export default {
       error.value = null
 
       try {
-        // Add user message to messages and context
         messages.value.push({
           role: 'user',
           content: userMessage
         })
         
-        conversationContext.value.push({
-          role: 'user',
-          content: userMessage
-        })
-
-        // Get response using usePrompt
+        // Get response using usePrompt with function definitions
         const { response } = await usePrompt(
           props.initialPrompt,
-          conversationContext.value
+          messages.value,
+          {
+            tools,
+            tool_choice: "auto"
+          }
         )
 
         if (response) {
-          // Add assistant response to messages and context
-          messages.value.push({
-            role: 'assistant',
-            content: response.content
-          })
-          
-          conversationContext.value.push({
-            role: 'assistant',
-            content: response.content
-          })
+          if (response.tool_calls) {
+            // Execute the function
+            const functionName = response.tool_calls[0].name
+            const args = JSON.parse(response.tool_calls[0].arguments)
+            
+            const functionResult = await executeFunction(functionName, args)
+            
+            // Add function result to messages
+            messages.value.push({
+              role: 'function',
+              name: functionName,
+              content: JSON.stringify(functionResult)
+            })
+
+            // Get final response from AI with function result
+            const { response: finalResponse } = await usePrompt(
+              props.initialPrompt,
+              [...messages.value]
+            )
+
+            if (finalResponse) {
+              messages.value.push({
+                role: 'assistant',
+                content: finalResponse.content
+              })
+            }
+          } else {
+            messages.value.push({
+              role: 'assistant',
+              content: response.content
+            })
+          }
         }
       } catch (e) {
         error.value = e?.message || 'An error occurred'

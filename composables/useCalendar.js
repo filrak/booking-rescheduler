@@ -6,6 +6,12 @@ export const useCalendar = () => {
         await LocalStoragePreset('calendar', mockCalendar)
     }
 
+    const getAppointment = async (date, time) => {
+        const db = await LocalStoragePreset('calendar', mockCalendar)
+        const data = await db.data
+        return data[date]?.[time] || null
+    }
+
     const addAppointment = async (date, time, appointmentData) => {
         const db = await LocalStoragePreset('calendar', mockCalendar)
         
@@ -50,6 +56,7 @@ export const useCalendar = () => {
 
     return {
         createFakeCalendar,
+        getAppointment,
         addAppointment,
         removeAppointment,
         changeAppointment

@@ -1,10 +1,11 @@
 import OpenAI from 'openai';
 import { useRuntimeConfig } from '#app';
 
-export const usePrompt = async (prompt, context = [{   
-  role: "system", 
-  content: prompt
-}]) => {
+export const usePrompt = async (
+  prompt, 
+  messages,
+  tools = null // Direct tools parameter
+) => {
   const config = useRuntimeConfig();
 
   const openai = new OpenAI({
@@ -12,10 +13,17 @@ export const usePrompt = async (prompt, context = [{
     dangerouslyAllowBrowser: true
   });
   
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: context
-  });
+  const completionParams = {
+    model: "gpt-4",
+    messages
+  };
+
+  if (tools) {
+    completionParams.tools = tools;
+    completionParams.tool_choice = "auto";
+  }
+  
+  const completion = await openai.chat.completions.create(completionParams);
 
   return { response: completion?.choices[0]?.message, context: completion };
 }; 
