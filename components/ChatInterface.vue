@@ -49,7 +49,6 @@ import { usePrompt } from '~/composables/usePrompt'
 
 export default {
   name: 'ChatInterface',
-  
   props: {
     initialPrompt: {
       type: String,

@@ -7,7 +7,7 @@
 
 <script>
 import ChatInterface from '~/components/ChatInterface.vue'
-
+import {mockCalendar} from '~/calendar_mock'
 export default {
   name: 'ChatPage',
   components: {
@@ -19,7 +19,9 @@ export default {
     - View appointments between 8 AM - 12 PM
     - Contact clients and barbers about rescheduling
     - Handle 1-hour appointment slots
-    - Understand different service types (Haircut, Beard Trim, Style)`
+    - Understand different service types (Haircut, Beard Trim, Style)
+    Here is the calendar you can operate within: ${JSON.stringify(mockCalendar)} 
+    `
 
     return {
       systemPrompt
