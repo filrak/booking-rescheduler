@@ -41,10 +41,13 @@ export const useCalendar = () => {
 
     const changeAppointment = async (date, time, newAppointmentData, newDate, newTime) => {
         const db = await LocalStoragePreset('calendar', mockCalendar)
-        
+        console.log(newAppointmentData, newDate, newTime)
         await db.update((data) => {
-            // If moving to a new date/time
-            if (newDate && newTime && (newDate !== date || newTime !== time)) {
+            // If moving to a new time (either with new date or just new time)
+            if (newTime && (newDate || time !== newTime)) {
+                // Use newDate if provided, otherwise use existing date
+                const targetDate = newDate || date
+                
                 // Store the appointment data
                 const appointmentData = data[date]?.[time]?.appointment
                 
@@ -54,10 +57,10 @@ export const useCalendar = () => {
                 }
                 
                 // Add to new slot
-                if (!data[newDate]) {
-                    data[newDate] = {}
+                if (!data[targetDate]) {
+                    data[targetDate] = {}
                 }
-                data[newDate][newTime] = {
+                data[targetDate][newTime] = {
                     available: false,
                     appointment: {
                         ...appointmentData,
@@ -77,6 +80,7 @@ export const useCalendar = () => {
                 }
             }
         })
+        console.log(db.data)
     }
 
     return {

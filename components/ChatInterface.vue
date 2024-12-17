@@ -163,7 +163,13 @@ export default {
           return `Appointment removed for ${args.date} at ${args.time}`
         
         case 'changeAppointment':
-          await calendar.changeAppointment(args.date, args.time, args.newAppointmentData)
+          await calendar.changeAppointment(
+            args.date, 
+            args.time, 
+            args.newAppointmentData, 
+            args.newDate,   
+            args.newTime   
+          )
           return `Appointment updated for ${args.date} at ${args.time}`
         
         default:
