@@ -46,18 +46,131 @@
 <script>
 import { ref, watch } from 'vue'
 import { usePrompt } from '~/composables/usePrompt'
+import { useCalendar } from '~/composables/useCalendar'
 import { mockCalendar } from '~/calendar_mock'
 
 export default {
   name: 'ChatInterface',
   setup() {
+    const calendar = useCalendar()
     const messages = ref([])
     const inputMessage = ref('')
     const isLoading = ref(false)
     const error = ref(null)
     const messagesContainer = ref(null)
 
-    // Keep system prompt separate
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "addAppointment",
+          description: "Add a new appointment to the calendar",
+          parameters: {
+            type: "object",
+            properties: {
+              date: {
+                type: "string",
+                description: "Date in YYYY-MM-DD format"
+              },
+              time: {
+                type: "string",
+                description: "Time in HH:MM format"
+              },
+              appointmentData: {
+                type: "object",
+                properties: {
+                  name: { type: "string", description: "Client name" },
+                  service: { type: "string", description: "Service type (Haircut, Beard Trim, Style)" }
+                },
+                required: ["name", "service"]
+              }
+            },
+            required: ["date", "time", "appointmentData"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "removeAppointment",
+          description: "Remove an existing appointment",
+          parameters: {
+            type: "object",
+            properties: {
+              date: {
+                type: "string",
+                description: "Date in YYYY-MM-DD format"
+              },
+              time: {
+                type: "string",
+                description: "Time in HH:MM format"
+              }
+            },
+            required: ["date", "time"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "changeAppointment",
+          description: "Modify an existing appointment, optionally moving it to a new time/date",
+          parameters: {
+            type: "object",
+            properties: {
+              date: {
+                type: "string",
+                description: "Current date in YYYY-MM-DD format"
+              },
+              time: {
+                type: "string",
+                description: "Current time in HH:MM format"
+              },
+              newAppointmentData: {
+                type: "object",
+                properties: {
+                  name: { type: "string", description: "New client name" },
+                  service: { type: "string", description: "New service type" }
+                }
+              },
+              newDate: {
+                type: "string",
+                description: "New date in YYYY-MM-DD format (optional)"
+              },
+              newTime: {
+                type: "string",
+                description: "New time in HH:MM format (optional)"
+              }
+            },
+            required: ["date", "time", "newAppointmentData"]
+          }
+        }
+      }
+    ]
+
+    // Execute calendar functions
+    const executeFunction = async (toolCall) => {
+      const { name, arguments: argsString } = toolCall.function
+      const args = JSON.parse(argsString)
+
+      switch (name) {
+        case 'addAppointment':
+          await calendar.addAppointment(args.date, args.time, args.appointmentData)
+          return `Appointment added for ${args.appointmentData.name} on ${args.date} at ${args.time}`
+        
+        case 'removeAppointment':
+          await calendar.removeAppointment(args.date, args.time)
+          return `Appointment removed for ${args.date} at ${args.time}`
+        
+        case 'changeAppointment':
+          await calendar.changeAppointment(args.date, args.time, args.newAppointmentData)
+          return `Appointment updated for ${args.date} at ${args.time}`
+        
+        default:
+          throw new Error(`Unknown function: ${name}`)
+      }
+    }
+
     const systemPrompt = {
       role: "system",
       content: `You are an AI assistant for a barbershop, specialized in managing appointments. You can:
@@ -78,23 +191,44 @@ export default {
       error.value = null
 
       try {
-        // Add user message to visible messages
         messages.value.push({
           role: 'user',
           content: userMessage
         })
 
         const { response } = await usePrompt(
-          [systemPrompt, ...messages.value]
+          [systemPrompt, ...messages.value],
+          tools
         )
 
-        if (response?.content) {
+        if (response.tool_calls) {
+          for (const toolCall of response.tool_calls) {
+            console.log('executing a tool call', toolCall)
+            const result = await executeFunction(toolCall)
+            messages.value.push({
+              role: 'function',
+              name: toolCall.function.name,
+              content: result
+            })
+          }
+
+          // Get final response after function execution
+          const { response: finalResponse } = await usePrompt(
+            [systemPrompt, ...messages.value]
+          )
+
+          if (finalResponse?.content) {
+            messages.value.push({
+              role: 'assistant',
+              content: finalResponse.content
+            })
+          }
+        } else if (response?.content) {
           messages.value.push({
             role: 'assistant',
             content: response.content
           })
         }
-        
       } catch (e) {
         error.value = e?.message || 'An error occurred'
         console.error('Chat error:', e)
