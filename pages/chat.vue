@@ -21,7 +21,7 @@ export default {
     - Contact clients and barbers about rescheduling
     - Handle 1-hour appointment slots
     - Understand different service types (Haircut, Beard Trim, Style)
-    Here is the calendar you can operate within: ${JSON.stringify(mockCalendar)} 
+    Here is the calendar you can operate within: ${mockCalendar.toString()} 
     `
 
     return {

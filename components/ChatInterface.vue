@@ -70,27 +70,6 @@ export default {
       {
         type: "function",
         function: {
-          name: "getAppointment",
-          description: "Get appointment details for a specific date, optionally for a specific time.",
-          parameters: {
-            type: "object",
-            properties: {
-              date: {
-                type: "string",
-                description: "Date in YYYY-MM-DD format"
-              },
-              time: {
-                type: "string",
-                description: "Optional. Time in HH:MM format."
-              }
-            },
-            required: ["date"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
           name: "addAppointment",
           description: "Add a new appointment",
           parameters: {
@@ -142,70 +121,63 @@ export default {
     }
 
     const handleSend = async () => {
-      if (!inputMessage.value.trim() || isLoading.value) return
-      
-      const userMessage = inputMessage.value
-      inputMessage.value = ''
-      isLoading.value = true
-      error.value = null
-
       try {
         messages.value.push({
           role: 'user',
-          content: userMessage
-        })
-        
-        // Get response using usePrompt with function definitions
+          content: inputMessage.value
+        });
+
         const { response } = await usePrompt(
           props.initialPrompt,
-          messages.value,
-          {
-            tools,
-            tool_choice: "auto"
-          }
-        )
+          messages.value        );
 
-        if (response) {
-          if (response.tool_calls) {
-            // Execute the function
-            const functionName = response.tool_calls[0].name
-            const args = JSON.parse(response.tool_calls[0].arguments)
+        if (response.tool_calls && response.tool_calls.length > 0) {
+          // First, add the assistant's message with the tool calls
+          messages.value.push({
+            role: 'assistant',
+            content: null,
+            tool_calls: response.tool_calls
+          });
+
+          // Then process each tool call and add its response
+          for (const toolCall of response.tool_calls) {
+            const args = JSON.parse(toolCall.function.arguments);
+            const functionResult = await executeFunction(toolCall.function.name, args);
             
-            const functionResult = await executeFunction(functionName, args)
-            
-            // Add function result to messages
             messages.value.push({
-              role: 'function',
-              name: functionName,
-              content: JSON.stringify(functionResult)
-            })
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              name: toolCall.function.name,
+              content: JSON.stringify(functionResult || {})
+            });
+          }
 
-            // Get final response from AI with function result
-            const { response: finalResponse } = await usePrompt(
-              props.initialPrompt,
-              [...messages.value]
-            )
+          // Get final response
+          const { response: finalResponse } = await usePrompt(
+            props.initialPrompt,
+            messages.value,
+            tools
+          );
 
-            if (finalResponse) {
-              messages.value.push({
-                role: 'assistant',
-                content: finalResponse.content
-              })
-            }
-          } else {
+          if (finalResponse?.content) {
             messages.value.push({
               role: 'assistant',
-              content: response.content
-            })
+              content: finalResponse.content
+            });
           }
+        } else if (response.content) {
+          messages.value.push({
+            role: 'assistant',
+            content: response.content
+          });
         }
       } catch (e) {
-        error.value = e?.message || 'An error occurred'
-        console.error('Chat error:', e)
+        error.value = e?.message || 'An error occurred';
+        console.error('Chat error:', e);
       } finally {
-        isLoading.value = false
+        isLoading.value = false;
       }
-    }
+    };
 
     // Scroll to bottom when new messages arrive
     watch(messages, () => {
