@@ -47,8 +47,8 @@
 import { ref, watch } from 'vue'
 import { usePrompt } from '~/composables/usePrompt'
 import { useCalendar } from '~/composables/useCalendar'
-import { mockCalendar } from '~/calendar_mock'
-
+import { mockCalendar } from '~/utils/calendarMock'
+import { tools, executeFunction } from '~/utils/calendarTools'
 export default {
   name: 'ChatInterface',
   setup() {
@@ -58,124 +58,6 @@ export default {
     const isLoading = ref(false)
     const error = ref(null)
     const messagesContainer = ref(null)
-
-    const tools = [
-      {
-        type: "function",
-        function: {
-          name: "addAppointment",
-          description: "Add a new appointment to the calendar",
-          parameters: {
-            type: "object",
-            properties: {
-              date: {
-                type: "string",
-                description: "Date in YYYY-MM-DD format"
-              },
-              time: {
-                type: "string",
-                description: "Time in HH:MM format"
-              },
-              appointmentData: {
-                type: "object",
-                properties: {
-                  name: { type: "string", description: "Client name" },
-                  service: { type: "string", description: "Service type (Haircut, Beard Trim, Style)" }
-                },
-                required: ["name", "service"]
-              }
-            },
-            required: ["date", "time", "appointmentData"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "removeAppointment",
-          description: "Remove an existing appointment",
-          parameters: {
-            type: "object",
-            properties: {
-              date: {
-                type: "string",
-                description: "Date in YYYY-MM-DD format"
-              },
-              time: {
-                type: "string",
-                description: "Time in HH:MM format"
-              }
-            },
-            required: ["date", "time"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "changeAppointment",
-          description: "Modify an existing appointment, optionally moving it to a new time/date",
-          parameters: {
-            type: "object",
-            properties: {
-              date: {
-                type: "string",
-                description: "Current date in YYYY-MM-DD format"
-              },
-              time: {
-                type: "string",
-                description: "Current time in HH:MM format"
-              },
-              newAppointmentData: {
-                type: "object",
-                properties: {
-                  name: { type: "string", description: "New client name" },
-                  service: { type: "string", description: "New service type" }
-                }
-              },
-              newDate: {
-                type: "string",
-                description: "New date in YYYY-MM-DD format (optional)"
-              },
-              newTime: {
-                type: "string",
-                description: "New time in HH:MM format (optional)"
-              }
-            },
-            required: ["date", "time", "newAppointmentData"]
-          }
-        }
-      }
-    ]
-
-    // Execute calendar functions
-    const executeFunction = async (toolCall) => {
-      const { name, arguments: argsString } = toolCall.function
-      const args = JSON.parse(argsString)
-
-      switch (name) {
-        case 'addAppointment':
-          await calendar.addAppointment(args.date, args.time, args.appointmentData)
-          return `Appointment added for ${args.appointmentData.name} on ${args.date} at ${args.time}`
-        
-        case 'removeAppointment':
-          await calendar.removeAppointment(args.date, args.time)
-          return `Appointment removed for ${args.date} at ${args.time}`
-        
-        case 'changeAppointment':
-          await calendar.changeAppointment(
-            args.date, 
-            args.time, 
-            args.newAppointmentData, 
-            args.newDate,   
-            args.newTime   
-          )
-          return `Appointment updated for ${args.date} at ${args.time}`
-        
-        default:
-          throw new Error(`Unknown function: ${name}`)
-      }
-    }
 
     const systemPrompt = {
       role: "system",
