@@ -46,138 +46,62 @@
 <script>
 import { ref, watch } from 'vue'
 import { usePrompt } from '~/composables/usePrompt'
-import { useCalendar } from '~/composables/useCalendar'
+import { mockCalendar } from '~/calendar_mock'
 
 export default {
   name: 'ChatInterface',
-  props: {
-    initialPrompt: {
-      type: String,
-      required: true
-    }
-  },
-
-  setup(props) {
+  setup() {
     const messages = ref([])
     const inputMessage = ref('')
     const isLoading = ref(false)
     const error = ref(null)
     const messagesContainer = ref(null)
-    const calendar = useCalendar()
-    
-    // Define available functions for the AI
-    const tools = [
-      {
-        type: "function",
-        function: {
-          name: "addAppointment",
-          description: "Add a new appointment",
-          parameters: {
-            type: "object",
-            properties: {
-              date: {
-                type: "string",
-                description: "Date in YYYY-MM-DD format"
-              },
-              time: {
-                type: "string",
-                description: "Time in HH:MM format"
-              },
-              appointmentData: {
-                type: "object",
-                properties: {
-                  name: { 
-                    type: "string",
-                    description: "Name of the person"
-                  },
-                  reason: { 
-                    type: "string",
-                    description: "Reason for the appointment"
-                  }
-                },
-                required: ["name", "reason"]
-              }
-            },
-            required: ["date", "time", "appointmentData"]
-          }
-        }
-      }
-    ];
 
-    // Function to execute calendar operations
-    const executeFunction = async (functionName, args) => {
-      switch (functionName) {
-        case 'getAppointment':
-          return await calendar.getAppointment(args.date, args.time || null)
-        case 'addAppointment':
-          return await calendar.addAppointment(
-            args.date,
-            args.time,
-            args.appointmentData
-          )
-        default:
-          throw new Error(`Unknown function: ${functionName}`)
-      }
+    // Keep system prompt separate
+    const systemPrompt = {
+      role: "system",
+      content: `You are an AI assistant for a barbershop, specialized in managing appointments. You can:
+      - Access the barbershop's calendar for the next 2 days
+      - View appointments between 8 AM - 12 PM
+      - Contact clients and barbers about rescheduling
+      - Handle 1-hour appointment slots
+      - Understand different service types (Haircut, Beard Trim, Style)
+      Here is the calendar you can operate within: ${JSON.stringify(mockCalendar)}`
     }
 
     const handleSend = async () => {
+      if (!inputMessage.value.trim() || isLoading.value) return
+      
+      const userMessage = inputMessage.value
+      inputMessage.value = ''
+      isLoading.value = true
+      error.value = null
+
       try {
+        // Add user message to visible messages
         messages.value.push({
           role: 'user',
-          content: inputMessage.value
-        });
+          content: userMessage
+        })
 
         const { response } = await usePrompt(
-          props.initialPrompt,
-          messages.value        );
+          [systemPrompt, ...messages.value]
+        )
 
-        if (response.tool_calls && response.tool_calls.length > 0) {
-          // First, add the assistant's message with the tool calls
-          messages.value.push({
-            role: 'assistant',
-            content: null,
-            tool_calls: response.tool_calls
-          });
-
-          // Then process each tool call and add its response
-          for (const toolCall of response.tool_calls) {
-            const args = JSON.parse(toolCall.function.arguments);
-            const functionResult = await executeFunction(toolCall.function.name, args);
-            
-            messages.value.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              name: toolCall.function.name,
-              content: JSON.stringify(functionResult || {})
-            });
-          }
-
-          // Get final response
-          const { response: finalResponse } = await usePrompt(
-            props.initialPrompt,
-            messages.value,
-            tools
-          );
-
-          if (finalResponse?.content) {
-            messages.value.push({
-              role: 'assistant',
-              content: finalResponse.content
-            });
-          }
-        } else if (response.content) {
+        if (response?.content) {
           messages.value.push({
             role: 'assistant',
             content: response.content
-          });
+          })
         }
+        
       } catch (e) {
-        error.value = e?.message || 'An error occurred';
-        console.error('Chat error:', e);
+        error.value = e?.message || 'An error occurred'
+        console.error('Chat error:', e)
       } finally {
-        isLoading.value = false;
+        isLoading.value = false
       }
-    };
+    }
 
     // Scroll to bottom when new messages arrive
     watch(messages, () => {
