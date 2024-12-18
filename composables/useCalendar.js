@@ -9,7 +9,6 @@ export const useCalendar = () => {
     const getAppointment = async (date, time) => {
         const db = await LocalStoragePreset('calendar', mockCalendar)
         const data = await db.data
-        console.log(data, date, time)
         return data[date]?.[time] || null
     }
 
@@ -39,15 +38,27 @@ export const useCalendar = () => {
         })
     }
 
+    // Check if a time slot is available
+    const isTimeSlotAvailable = async (date, time) => {
+        const db = await LocalStoragePreset('calendar', mockCalendar)
+        const data = await db.data
+        return !data[date]?.[time] || data[date][time].available === true
+    }
+
     const changeAppointment = async (date, time, newAppointmentData, newDate, newTime) => {
         const db = await LocalStoragePreset('calendar', mockCalendar)
-        console.log(newAppointmentData, newDate, newTime)
-        await db.update((data) => {
-            // If moving to a new time (either with new date or just new time)
-            if (newTime && (newDate || time !== newTime)) {
-                // Use newDate if provided, otherwise use existing date
-                const targetDate = newDate || date
-                
+        
+        // If moving to a new time, check for conflicts
+        if (newTime && (newDate || time !== newTime)) {
+            const targetDate = newDate || date
+            
+            // Check if the target time slot is available
+            const isAvailable = await isTimeSlotAvailable(targetDate, newTime)
+            if (!isAvailable) {
+                throw new Error('Selected time slot is already booked')
+            }
+            
+            await db.update((data) => {
                 // Store the appointment data
                 const appointmentData = data[date]?.[time]?.appointment
                 
@@ -67,8 +78,10 @@ export const useCalendar = () => {
                         ...newAppointmentData
                     }
                 }
-            } else {
-                // Just update existing appointment data
+            })
+        } else {
+            // Just update existing appointment data
+            await db.update((data) => {
                 if (data[date] && data[date][time]) {
                     data[date][time] = {
                         available: false,
@@ -78,9 +91,8 @@ export const useCalendar = () => {
                         }
                     }
                 }
-            }
-        })
-        console.log(db.data)
+            })
+        }
     }
 
     return {
@@ -88,6 +100,7 @@ export const useCalendar = () => {
         getAppointment,
         addAppointment,
         removeAppointment,
-        changeAppointment
+        changeAppointment,
+        isTimeSlotAvailable
     }
 }
