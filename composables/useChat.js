@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { useRuntimeConfig } from '#app';
 
-export const usePrompt = async (messages, tools = null) => {
+export const useChat = async (messages, tools = null) => {
   const config = useRuntimeConfig();
 
   const openai = new OpenAI({

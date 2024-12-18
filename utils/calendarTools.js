@@ -53,13 +53,13 @@ const tools = [
       type: "function",
       function: {
         name: "changeAppointment",
-        description: "Modify an existing appointment, optionally moving it to a new time/date",
+        description: "Modify an existing appointment, optionally moving it to a new time/date. Don't modify if there is already an appointment at that time",
         parameters: {
           type: "object",
           properties: {
             date: {
               type: "string",
-              description: "Current date in YYYY-MM-DD format"
+              description: "Current date in DD.MM.YYYY format"
             },
             time: {
               type: "string",
@@ -74,7 +74,7 @@ const tools = [
             },
             newDate: {
               type: "string",
-              description: "New date in YYYY-MM-DD format (optional)"
+              description: "New date in DD.MM.YYYY format (optional)"
             },
             newTime: {
               type: "string",
@@ -87,7 +87,7 @@ const tools = [
     }
   ]
 
-  const executeFunction = async (toolCall) => {
+  const executeFunction = async (toolCall, calendar) => {
     const { name, arguments: argsString } = toolCall.function
     const args = JSON.parse(argsString)
 

@@ -73,3 +73,16 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+
+
+to-do:
+
+- don't book if there is already an appointment at that time
+- don't book if the time is not in the range 8:00 - 12:00
+
+
+How to treat rescheduling
+- First ask about preferences, then suggest the exact times that were prefered if they are available or the next available time as close to preffered as possible.
+- If the person cannot make it in any available time, try to reschedule one of the existing visits.
+

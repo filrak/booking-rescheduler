@@ -45,10 +45,11 @@
 
 <script>
 import { ref, watch } from 'vue'
-import { usePrompt } from '~/composables/usePrompt'
+import { useChat } from '~/composables/useChat'
 import { useCalendar } from '~/composables/useCalendar'
-import { mockCalendar } from '~/utils/calendarMock'
 import { tools, executeFunction } from '~/utils/calendarTools'
+import { systemPrompt } from '~/utils/prompt'
+
 export default {
   name: 'ChatInterface',
   setup() {
@@ -58,17 +59,6 @@ export default {
     const isLoading = ref(false)
     const error = ref(null)
     const messagesContainer = ref(null)
-
-    const systemPrompt = {
-      role: "system",
-      content: `You are an AI assistant for a barbershop, specialized in managing appointments. You can:
-      - Access the barbershop's calendar for the next 2 days
-      - View appointments between 8 AM - 12 PM
-      - Contact clients and barbers about rescheduling
-      - Handle 1-hour appointment slots
-      - Understand different service types (Haircut, Beard Trim, Style)
-      Here is the calendar you can operate within: ${JSON.stringify(mockCalendar)}`
-    }
 
     const handleSend = async () => {
       if (!inputMessage.value.trim() || isLoading.value) return
@@ -84,7 +74,7 @@ export default {
           content: userMessage
         })
 
-        const { response } = await usePrompt(
+        const { response } = await useChat(
           [systemPrompt, ...messages.value],
           tools
         )
@@ -92,7 +82,7 @@ export default {
         if (response.tool_calls) {
           for (const toolCall of response.tool_calls) {
             console.log('executing a tool call', toolCall)
-            const result = await executeFunction(toolCall)
+            const result = await executeFunction(toolCall, calendar)
             messages.value.push({
               role: 'function',
               name: toolCall.function.name,
@@ -101,7 +91,7 @@ export default {
           }
 
           // Get final response after function execution
-          const { response: finalResponse } = await usePrompt(
+          const { response: finalResponse } = await useChat(
             [systemPrompt, ...messages.value]
           )
 

@@ -1,5 +1,5 @@
 import { LocalStoragePreset } from 'lowdb/browser'
-import { mockCalendar } from './calendar_mock'
+import { mockCalendar } from './utils/calendarMock'
 
 export const useCalendar = () => {
     const createFakeCalendar = async () => {

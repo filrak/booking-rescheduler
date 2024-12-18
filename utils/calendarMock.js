@@ -4,7 +4,7 @@ export const mockCalendar = {
     "9:00": { 
       available: false,
       appointment: {
-        client: "John Smith",
+        clientId: "c_001",
         service: "Haircut & Beard Trim",
         barber: "Mike"
       }
@@ -57,3 +57,26 @@ export const mockBarbers = {
     flexibility: "high"
   }
 } 
+
+export const mockClients = {
+  "c_001": {
+    name: "John Smith",
+    email: "john.smith@example.com",
+    phone: "+1234567890"
+  },
+  "c_002": {
+    name: "Emma Davis",
+    email: "emma.davis@example.com",
+    phone: "+1234567891"
+  },
+  "c_003": {
+    name: "Michael Brown",
+    email: "michael.brown@example.com",
+    phone: "+1234567892"
+  },
+  "c_004": {
+    name: "Sarah Wilson",
+    email: "sarah.wilson@example.com",
+    phone: "+1234567893"
+  }
+}
