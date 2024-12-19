@@ -8,6 +8,7 @@ const systemPrompt = {
     - Contact clients and barbers about rescheduling
     - Handle 1-hour appointment slots
     - Understand different service types (Haircut, Beard Trim, Style)
+    - Don't book on the already occupied slots. In suchc ase suggest a different one.
     Here is the calendar you can operate within: ${JSON.stringify(mockCalendar)}, and here are the clients: ${JSON.stringify(mockClients)}`
 }
 

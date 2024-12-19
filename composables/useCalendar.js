@@ -1,98 +1,106 @@
-import { LocalStoragePreset } from 'lowdb/browser'
 import { mockCalendar } from './utils/calendarMock'
 
+// Constants
+const STORAGE_KEY = 'calendar'
+
 export const useCalendar = () => {
-    const createFakeCalendar = async () => {
-        await LocalStoragePreset('calendar', mockCalendar)
+    const getCalendarData = () => {
+        const data = localStorage.getItem(STORAGE_KEY)
+        return data ? JSON.parse(data) : {}
     }
 
-    const getAppointment = async (date, time) => {
-        const db = await LocalStoragePreset('calendar', mockCalendar)
-        const data = await db.data
+    const setCalendarData = (data) => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    }
+
+    const createFakeCalendar = () => {
+        if (!localStorage.getItem(STORAGE_KEY)) {
+            setCalendarData(mockCalendar)
+        }
+    }
+
+    const getAppointment = (date, time) => {
+        const data = getCalendarData()
         return data[date]?.[time] || null
     }
 
-    const addAppointment = async (date, time, appointmentData) => {
-        const db = await LocalStoragePreset('calendar', mockCalendar)
+    const addAppointment = (date, time, appointmentData) => {
+        const data = getCalendarData()
         
-        await db.update((data) => {
-            if (!data[date]) {
-                data[date] = {}
-            }
+        if (!data[date]) {
+            data[date] = {}
+        }
+        data[date][time] = {
+            available: false,
+            appointment: appointmentData
+        }
+        
+        setCalendarData(data)
+    }
+
+    const removeAppointment = (date, time) => {
+        const data = getCalendarData()
+        
+        if (data[date] && data[date][time]) {
             data[date][time] = {
-                available: false,
-                appointment: appointmentData
+                available: true
             }
-        })
+            setCalendarData(data)
+        }
     }
 
-    const removeAppointment = async (date, time) => {
-        const db = await LocalStoragePreset('calendar', mockCalendar)
-        
-        await db.update((data) => {
-            if (data[date] && data[date][time]) {
-                data[date][time] = {
-                    available: true
-                }
-            }
-        })
-    }
-
-    // Check if a time slot is available
-    const isTimeSlotAvailable = async (date, time) => {
-        const db = await LocalStoragePreset('calendar', mockCalendar)
-        const data = await db.data
+    const isTimeSlotAvailable = (date, time) => {
+        const data = getCalendarData()
         return !data[date]?.[time] || data[date][time].available === true
     }
 
-    const changeAppointment = async (date, time, newAppointmentData, newDate, newTime) => {
-        const db = await LocalStoragePreset('calendar', mockCalendar)
+    const changeAppointment = (date, time, newAppointmentData, newDate, newTime) => {
+        const data = getCalendarData()
         
-        // If moving to a new time, check for conflicts
+        // If moving to a new time
         if (newTime && (newDate || time !== newTime)) {
             const targetDate = newDate || date
             
             // Check if the target time slot is available
-            const isAvailable = await isTimeSlotAvailable(targetDate, newTime)
+            const isAvailable = isTimeSlotAvailable(targetDate, newTime)
             if (!isAvailable) {
-                throw new Error('Selected time slot is already booked')
+                return false
             }
             
-            await db.update((data) => {
-                // Store the appointment data
-                const appointmentData = data[date]?.[time]?.appointment
-                
-                // Remove from old slot
-                if (data[date] && data[date][time]) {
-                    data[date][time] = { available: true }
+            // Store the appointment data
+            const appointmentData = data[date]?.[time]?.appointment
+            
+            // Remove from old slot
+            if (data[date] && data[date][time]) {
+                data[date][time] = { available: true }
+            }
+            
+            // Add to new slot
+            if (!data[targetDate]) {
+                data[targetDate] = {}
+            }
+            data[targetDate][newTime] = {
+                available: false,
+                appointment: {
+                    ...appointmentData,
+                    ...newAppointmentData
                 }
-                
-                // Add to new slot
-                if (!data[targetDate]) {
-                    data[targetDate] = {}
-                }
-                data[targetDate][newTime] = {
+            }
+        } else {
+            // Just update existing appointment data
+            if (data[date] && data[date][time]) {
+                data[date][time] = {
                     available: false,
                     appointment: {
-                        ...appointmentData,
+                        ...data[date][time].appointment,
                         ...newAppointmentData
                     }
                 }
-            })
-        } else {
-            // Just update existing appointment data
-            await db.update((data) => {
-                if (data[date] && data[date][time]) {
-                    data[date][time] = {
-                        available: false,
-                        appointment: {
-                            ...data[date][time].appointment,
-                            ...newAppointmentData
-                        }
-                    }
-                }
-            })
+            }
         }
+        
+        setCalendarData(data)
+        return true
     }
 
     return {

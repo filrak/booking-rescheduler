@@ -53,7 +53,7 @@ const tools = [
       type: "function",
       function: {
         name: "changeAppointment",
-        description: "Modify an existing appointment, optionally moving it to a new time/date. Don't modify if there is already an appointment at that time",
+        description: "Modify an existing appointment, optionally moving it to a new time/date. Returns true if successful, false if the target time slot is already booked.",
         parameters: {
           type: "object",
           properties: {
@@ -101,14 +101,18 @@ const tools = [
         return `Appointment removed for ${args.date} at ${args.time}`
       
       case 'changeAppointment':
-        await calendar.changeAppointment(
+        const success = await calendar.changeAppointment(
           args.date, 
           args.time, 
           args.newAppointmentData, 
           args.newDate,   
           args.newTime   
         )
-        return `Appointment updated for ${args.date} at ${args.time}`
+        if (success) {
+          return `Appointment successfully updated for ${args.date} at ${args.time}`
+        } else {
+          return `Could not update appointment - the requested time slot is already booked. Please choose a different time.`
+        }
       
       default:
         throw new Error(`Unknown function: ${name}`)
