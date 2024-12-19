@@ -39,3 +39,7 @@ In addition the assistant should be able to contact other clients when there are
 - Log errors appropriately for debugging
 - Provide user-friendly error messages
 - Handle network failures gracefully
+
+
+# Nuxt
+- Remember that Nuxt has autoimports for components and composables.

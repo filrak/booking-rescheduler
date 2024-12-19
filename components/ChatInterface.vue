@@ -6,16 +6,12 @@
         :key="index"
         :class="['message', message.role]"
       >
-        <div class="avatar">
-          {{ message.role === 'user' ? '👤' : '🤖' }}
-        </div>
         <div class="message-content">
           {{ message.content }}
         </div>
       </div>
       
       <div v-if="isLoading" class="message assistant">
-        <div class="avatar">🤖</div>
         <div class="message-content">
           <div class="typing-indicator">
             <span></span>
@@ -57,95 +53,86 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, watch } from 'vue'
 import { useChat } from '~/composables/useChat'
 import { useCalendar } from '~/composables/useCalendar'
 import { tools, executeFunction } from '~/utils/calendarTools'
-import { systemPrompt } from '~/utils/prompt'
+import { createSystemPrompt } from '~/utils/prompt'
 
-export default {
-  name: 'ChatInterface',
-  setup() {
-    const calendar = useCalendar()
-    const messages = ref([])
-    const inputMessage = ref('')
-    const isLoading = ref(false)
-    const error = ref(null)
-    const messagesContainer = ref(null)
+const props = defineProps({
+  userId: {
+    type: String,
+    required: true
+  }
+})
 
-    const handleSend = async () => {
-      if (!inputMessage.value.trim() || isLoading.value) return
-      
-      const userMessage = inputMessage.value
-      inputMessage.value = ''
-      isLoading.value = true
-      error.value = null
+const messages = ref([])
+const inputMessage = ref('')
+const isLoading = ref(false)
+const error = ref(null)
+const messagesContainer = ref(null)
 
-      try {
-        messages.value.push({
-          role: 'user',
-          content: userMessage
-        })
-
-        const { response } = await useChat(
-          [systemPrompt, ...messages.value],
-          tools
-        )
-
-        if (response.tool_calls) {
-          for (const toolCall of response.tool_calls) {
-            console.log('executing a tool call', toolCall)
-            const result = await executeFunction(toolCall, calendar)
-            messages.value.push({
-              role: 'function',
-              name: toolCall.function.name,
-              content: result
-            })
-          }
-
-          // Get final response after function execution
-          const { response: finalResponse } = await useChat(
-            [systemPrompt, ...messages.value]
-          )
-
-          if (finalResponse?.content) {
-            messages.value.push({
-              role: 'assistant',
-              content: finalResponse.content
-            })
-          }
-        } else if (response?.content) {
-          messages.value.push({
-            role: 'assistant',
-            content: response.content
-          })
-        }
-      } catch (e) {
-        error.value = e?.message || 'An error occurred'
-        console.error('Chat error:', e)
-      } finally {
-        isLoading.value = false
-      }
+watch(messages, () => {
+  setTimeout(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
     }
+  }, 0)
+})
 
-    // Scroll to bottom when new messages arrive
-    watch(messages, () => {
-      setTimeout(() => {
-        if (messagesContainer.value) {
-          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-        }
-      }, 0)
+const handleSend = async () => {
+  if (!inputMessage.value.trim() || isLoading.value) return
+  
+  const userMessage = inputMessage.value
+  inputMessage.value = ''
+  isLoading.value = true
+  error.value = null
+
+  try {
+    messages.value.push({
+      role: 'user',
+      content: userMessage
     })
 
-    return {
-      messages,
-      inputMessage,
-      isLoading,
-      error,
-      messagesContainer,
-      handleSend
+    const { response } = await useChat(
+      [createSystemPrompt(props.userId), ...messages.value],
+      tools
+    )
+
+    if (response.tool_calls) {
+      for (const toolCall of response.tool_calls) {
+        console.log('executing a tool call', toolCall)
+        const result = await executeFunction(toolCall, useCalendar())
+        messages.value.push({
+          role: 'function',
+          name: toolCall.function.name,
+          content: result
+        })
+      }
+
+      // Get final response after function execution
+      const { response: finalResponse } = await useChat(
+        [createSystemPrompt(props.userId), ...messages.value]
+      )
+
+      if (finalResponse?.content) {
+        messages.value.push({
+          role: 'assistant',
+          content: finalResponse.content
+        })
+      }
+    } else if (response?.content) {
+      messages.value.push({
+        role: 'assistant',
+        content: response.content
+      })
     }
+  } catch (e) {
+    error.value = e?.message || 'An error occurred'
+    console.error('Chat error:', e)
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
@@ -177,7 +164,6 @@ export default {
 
 .message {
   display: flex;
-  gap: 1rem;
   max-width: 85%;
   opacity: 0;
   animation: fadeIn 0.3s ease forwards;
@@ -185,21 +171,12 @@ export default {
   line-height: 1.5;
 }
 
-.avatar {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  font-size: 1rem;
-}
-
 .message-content {
   padding: 0.75rem 1rem;
   border-radius: 12px;
   font-weight: 400;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .message.user {

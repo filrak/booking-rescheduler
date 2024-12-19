@@ -5,20 +5,15 @@
       <p class="subtitle">AI-powered scheduling made simple</p>
     </div>
     <div class="main-content">
-      <ChatInterface/> 
+      <ChatInterface :userId="$route.params.id"/> 
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import ChatInterface from '~/components/ChatInterface.vue'
 
-export default {
-  name: 'ChatPage',
-  components: {
-    ChatInterface
-  }
-}
+const route = useRoute()
 </script>
 
 <style scoped>
