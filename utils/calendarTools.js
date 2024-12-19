@@ -109,7 +109,9 @@ const tools = [
           args.newTime   
         )
         if (success) {
-          return `Appointment successfully updated for ${args.date} at ${args.time}`
+          const targetDate = args.newDate || args.date
+          const targetTime = args.newTime || args.time
+          return `Appointment successfully updated from ${args.date} at ${args.time} to ${targetDate} at ${targetTime} for ${args.newAppointmentData.name} (${args.newAppointmentData.service})`
         } else {
           return `Could not update appointment - the requested time slot is already booked. Please choose a different time.`
         }
