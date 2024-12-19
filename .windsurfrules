@@ -3,7 +3,7 @@
 Every time you choose to apply a rule(s), explicitly state the rule(s) in the output. You can abbreviate the rule description to a single word or phrase.
 
 ## Project Context
-The goal of this tool is to assist the user in rescheduling their appointments so they dopn't need to call. The assistant will take care of managing the calendar. 
+The goal of this tool is to assist the user in rescheduling their appointments so they dont need to call. The assistant will take care of managing the calendar. 
 In addition the assistant should be able to contact other clients when there are no suitable slots and ask them if they could reschedule their appintment.
 
 ├── projectroot/
@@ -14,7 +14,10 @@ In addition the assistant should be able to contact other clients when there are
     ├── components/     # Shared componnets
         ├── {pagename}/ # page-specific components
     ├── pages/          # Page components
-    ├── utils/          # Utilities, mocks and helpers
+    ├── utils/  
+        - calendarMock  # mocked caledar database
+        - prompt.js # system prompt
+        # calendarTools # ChatGPT tools for calendar        # Utilities, mocks and helpers
     └── server/         # api routes
 ```
 
@@ -28,10 +31,11 @@ In addition the assistant should be able to contact other clients when there are
 - Favor named exports for components and utilities
 
 ## TypeScript Usage
-- Avoid try/catch blocks unless there's good reason to translate or handle error in that abstraction
+- Avoid try/catch blocks unless there is good reason to translate or handle error in that abstraction
+- Don't use Typescript
 
 ## State Management
-- Use Nuxt's useState when needing to manage the global state.
+- Use Nuxts useState when needing to manage the global state.
 - For now use loclStorage and api mocks in nuxt api routes (server/api) for mocked api calls
 
 ## Error Handling

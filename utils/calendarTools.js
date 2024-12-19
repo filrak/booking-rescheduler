@@ -84,37 +84,64 @@ const tools = [
           required: ["date", "time", "newAppointmentData"]
         }
       }
+    },
+    {
+      type: "function",
+      function: {
+        name: "askClientToReschedule",
+        description: "Ask a client if they would be willing to reschedule their appointment",
+        parameters: {
+          type: "object",
+          properties: {
+            appointment: {
+              type: "object",
+              properties: {
+                client: { type: "string", description: "Client name" },
+                time: { type: "string", description: "Time of the appointment" },
+                service: { type: "string", description: "Service type" }
+              },
+              required: ["client", "time", "service"]
+            }
+          },
+          required: ["appointment"]
+        }
+      }
     }
   ]
 
   const executeFunction = async (toolCall, calendar) => {
-    const { name, arguments: argsString } = toolCall.function
-    const args = JSON.parse(argsString)
+    const { name, arguments: args } = toolCall.function
+    const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args
 
     switch (name) {
       case 'addAppointment':
-        await calendar.addAppointment(args.date, args.time, args.appointmentData)
-        return `Appointment added for ${args.appointmentData.name} on ${args.date} at ${args.time}`
+        await calendar.addAppointment(parsedArgs.date, parsedArgs.time, parsedArgs.appointmentData)
+        return `Appointment added for ${parsedArgs.appointmentData.name} on ${parsedArgs.date} at ${parsedArgs.time}`
       
       case 'removeAppointment':
-        await calendar.removeAppointment(args.date, args.time)
-        return `Appointment removed for ${args.date} at ${args.time}`
+        await calendar.removeAppointment(parsedArgs.date, parsedArgs.time)
+        return `Appointment removed for ${parsedArgs.date} at ${parsedArgs.time}`
       
       case 'changeAppointment':
         const success = await calendar.changeAppointment(
-          args.date, 
-          args.time, 
-          args.newAppointmentData, 
-          args.newDate,   
-          args.newTime   
+          parsedArgs.date, 
+          parsedArgs.time, 
+          parsedArgs.newAppointmentData, 
+          parsedArgs.newDate,   
+          parsedArgs.newTime   
         )
         if (success) {
-          const targetDate = args.newDate || args.date
-          const targetTime = args.newTime || args.time
-          return `Appointment successfully updated from ${args.date} at ${args.time} to ${targetDate} at ${targetTime} for ${args.newAppointmentData.name} (${args.newAppointmentData.service})`
+          const targetDate = parsedArgs.newDate || parsedArgs.date
+          const targetTime = parsedArgs.newTime || parsedArgs.time
+          return `Appointment successfully updated from ${parsedArgs.date} at ${parsedArgs.time} to ${targetDate} at ${targetTime} for ${parsedArgs.newAppointmentData.name} (${parsedArgs.newAppointmentData.service})`
         } else {
           return `Could not update appointment - the requested time slot is already booked. Please choose a different time.`
         }
+      
+      case 'askClientToReschedule': {
+        const { askToReschedule } = useAskReschedule()
+        return await askToReschedule(parsedArgs.appointment)
+      }
       
       default:
         throw new Error(`Unknown function: ${name}`)
