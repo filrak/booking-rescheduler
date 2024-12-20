@@ -2,11 +2,6 @@ export function useAskReschedule() {
   const isLoading = ref(false)
   const error = ref(null)
 
-  /**
-   * Ask a client if they would be willing to reschedule their appointment
-   * @param {Object} appointment - The appointment to potentially reschedule
-   * @returns {Promise<{success: boolean, content: string}>} Response with the client's decision
-   */
   async function askToReschedule(appointment) {
     isLoading.value = true
     error.value = null
