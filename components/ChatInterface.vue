@@ -84,6 +84,7 @@ watch(messages, () => {
 const handleSend = async () => {
   if (!inputMessage.value.trim() || isLoading.value) return
   
+  
   const userMessage = inputMessage.value
   inputMessage.value = ''
   isLoading.value = true
