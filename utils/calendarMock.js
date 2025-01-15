@@ -1,3 +1,6 @@
+// Mock calendar data structure
+// Each day contains hourly slots with appointment information
+// clientId format: c_XXX where XXX is a unique identifier
 export const mockCalendar = {
   "12.10.2024": {
     "8:00": { available: true },
@@ -13,7 +16,7 @@ export const mockCalendar = {
     "11:00": { 
       available: false,
       appointment: {
-        client: "Emma Davis",
+        clientId: "c_002",
         service: "Men's Haircut",
         barber: "Mike"
       }
@@ -26,7 +29,7 @@ export const mockCalendar = {
     "10:00": { 
       available: false,
       appointment: {
-        client: "Michael Brown",
+        clientId: "c_003",
         service: "Beard Trim",
         barber: "Steve"
       }
@@ -34,7 +37,7 @@ export const mockCalendar = {
     "11:00": { 
       available: false,
       appointment: {
-        client: "Sarah Wilson",
+        clientId: "c_004",
         service: "Haircut & Style",
         barber: "Steve"
       }
@@ -43,6 +46,7 @@ export const mockCalendar = {
   }
 }
 
+// Mock barbers data with their preferences and availability
 export const mockBarbers = {
   "Mike": {
     email: "mike@barbershop.com",
