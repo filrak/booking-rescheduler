@@ -1,9 +1,10 @@
-import { mockCalendar } from '~/utils/calendarMock'
+import { useCalendar } from '~/utils/calendarComposable'
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
-    const { appointmentToReschedule } = body
+    const { appointmentToReschedule, preferredDate, preferredTime } = body
+    const calendar = useCalendar()
 
     // Simulate client response delay (1-2 seconds)
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
@@ -12,21 +13,38 @@ export default defineEventHandler(async (event) => {
     const clientWillingToReschedule = Math.random() < 0.7
 
     if (clientWillingToReschedule) {
+      // Remove the old appointment
+      calendar.removeAppointment(
+        appointmentToReschedule.date,
+        appointmentToReschedule.time
+      )
+
+      // Add the new appointment
+      calendar.addAppointment(
+        preferredDate,
+        preferredTime,
+        {
+          clientId: appointmentToReschedule.clientId,
+          service: appointmentToReschedule.service,
+          barber: appointmentToReschedule.barber
+        }
+      )
+
       return {
-        success: true,
-        content: `The client (${appointmentToReschedule.client}) has agreed to reschedule their ${appointmentToReschedule.service} appointment from ${appointmentToReschedule.time}.`
+        role: 'assistant',
+        content: `The appointment has been successfully rescheduled to ${preferredDate} at ${preferredTime}.`
       }
     }
 
     return {
-      success: false,
-      content: `The client (${appointmentToReschedule.client}) prefers to keep their original appointment time at ${appointmentToReschedule.time}.`
+      role: 'assistant',
+      content: "Unfortunately, we asked someone else to reschedule the appointment and they declined. Please try a different time."
     }
-
   } catch (error) {
+    console.error('Error in request-reschedule:', error)
     return {
-      success: false,
-      content: 'An error occurred while contacting the client'
+      role: 'assistant',
+      content: "An error occurred while processing your request. Please try again."
     }
   }
 })
