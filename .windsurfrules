@@ -10,7 +10,7 @@ In addition the assistant should be able to contact other clients when there are
 │   ├── .gitignore
 │   ├── app.vue
 │   ├── assets/         # Static assets
-│   ├── composables/    # Vue Composables
+│   ├── composables/    # Vue Composables, look for them here
     ├── components/     # Shared componnets
         ├── {pagename}/ # page-specific components
     ├── pages/          # Page components

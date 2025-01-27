@@ -1,4 +1,4 @@
-import { useCalendar } from '~/utils/calendarComposable'
+import { useCalendar } from '~/composables/useCalendar'
 
 export default defineEventHandler(async (event) => {
   try {
